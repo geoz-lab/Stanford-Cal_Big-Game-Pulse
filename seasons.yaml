@@ -1,0 +1,38 @@
+# One entry per Big Game. Kickoff times and scores come from ESPN's public game records
+# (refreshed by `biggame games`). Collection window: game day -12 days .. +15 days.
+window_before_days: 12
+window_after_days: 15
+
+# Hashtags searched every year; "biggame{year}" is added automatically per season.
+hashtags: [biggame, thebiggame, stanfordvscal, calvsstanford, stanfordvcal, calvstanford,
+           stanfordfootball, calfootball, stanfordcardinal, calbears, gostanford, stanfordaxe,
+           theaxe, calband, lsjumb]
+# Caption keyword pairs (AND). TikTok matches keywords fuzzily; the relevance filter cleans up.
+keyword_pairs:
+  kw_biggame_stanford: ["big game", "stanford"]
+  kw_stanford_berkeley: ["stanford", "berkeley"]
+  kw_stanford_cal: ["stanford", "cal"]
+
+# Head coaches are curated here because ESPN's coach records list today's coach for every
+# past season. Verified 2026-11-12 (gostanford.com, ESPN, SF Chronicle, Daily Cal).
+coaches:
+  shaw:    {name: David Shaw, team: stanford, tenure: "2011–2022", note: "Stanford's winningest coach; resigned after the 2022 season"}
+  taylor:  {name: Troy Taylor, team: stanford, tenure: "2023–2024", note: "Hired from Sacramento State; fired March 2025"}
+  reich:   {name: Frank Reich, team: stanford, tenure: "2025 (interim)", note: "Former NFL head coach; one-season interim deal under GM Andrew Luck"}
+  wilcox:  {name: Justin Wilcox, team: cal, tenure: "2017–2025", note: "Fired Nov 23, 2025, the day after the 2025 Big Game; 48–55 overall"}
+
+seasons:
+  2020: {date: 2020-11-27, espn_id: 401249417, venue: California Memorial Stadium, home: cal,
+         coaches: {stanford: shaw, cal: wilcox},
+         note: "COVID season, Friday game, no fans. API under-returns pre-2021 videos."}
+  2021: {date: 2021-11-20, espn_id: 401309900, venue: Stanford Stadium, home: stanford, coaches: {stanford: shaw, cal: wilcox}}
+  2022: {date: 2022-11-19, espn_id: 401404041, venue: California Memorial Stadium, home: cal, coaches: {stanford: shaw, cal: wilcox}}
+  2023: {date: 2023-11-18, espn_id: 401524061, venue: Stanford Stadium, home: stanford, coaches: {stanford: taylor, cal: wilcox}}
+  2024: {date: 2024-11-23, espn_id: 401635613, venue: California Memorial Stadium, home: cal, coaches: {stanford: taylor, cal: wilcox}}
+  2025: {date: 2025-11-22, espn_id: 401754599, venue: Stanford Stadium, home: stanford, coaches: {stanford: reich, cal: wilcox}}
+
+# Polymarket prediction markets (public Gamma + CLOB APIs; no account or key needed).
+polymarket:
+  big_game: {2025: cfb-cah-stan-2025-11-22, 2026: cfb-stan-cah-2026-11-21}
+  win_totals: {stanford: ncaa-football-stanford-2026-win-total, cal: ncaa-football-california-2026-win-total}
+  next_game: {year: 2026, date: 2026-11-21, kickoff_utc: "2026-11-22T00:30:00Z", venue: California Memorial Stadium}

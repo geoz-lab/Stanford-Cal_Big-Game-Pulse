@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Big Game Pulse</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=3">
+  <script src="vendor/echarts.min.js?v=5.5.1"></script>
+</head>
+<body>
+<header class="hero" id="top">
+  <div class="hero-bg" style="background-image:url(assets/hero.jpg)"></div>
+    <div class="wrap hero-inner">
+    <div class="hero-copy">
+      <img class="logo" src="assets/logo.png" alt="Big Game logo: Cal and Stanford with the Axe">
+      <div class="kicker">Stanford vs Cal · 2020–2025</div>
+      <h1>Big Game Pulse</h1>
+      <p class="lede">Six rivalry games and thousands of fan comments. See how Stanford and Cal fans felt before, during and after each Big Game.</p>
+      <div class="hero-stats" id="hero-stats"></div>
+      <div class="cta">
+        <button class="btn neon st" id="cta-replay">▶ Replay the latest game</button>
+        <button class="btn neon ca" id="cta-compare">Compare all six years</button>
+        <button class="btn neon gold" id="cta-odds">📈 2026 betting odds</button>
+      </div>
+    </div>
+    <figure class="poster"><img src="assets/hero.jpg" alt="Cyberpunk Big Game poster: a Stanford runner and a Cal defender in the rain beneath a glowing Axe"></figure>
+  </div>
+  <div class="ticker" aria-hidden="true"><div class="ticker-track" id="ticker"></div></div>
+</header>
+
+<div class="navbar">
+  <div class="wrap nav-row">
+    <img class="mark" src="assets/logo.png" alt="">
+    <nav class="seasons" id="seasons" role="tablist"></nav>
+    <div class="tools">
+      <button class="btn" id="rebuild" title="Rebuild the dataset from collected data and labels">↻ Rebuild</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="dash">
+  <section id="markets" class="hidden">
+    <div class="markets-head"><h2 class="section-title">On the betting line <span class="badge">Polymarket</span></h2><button class="btn" id="close-odds">✕ Hide odds</button></div>
+    <section class="grid g-3">
+      <div class="card market-next">
+        <div class="head"><div><h2 id="pm-next-title">Next Big Game</h2><p class="sub" id="pm-next-sub"></p></div><span class="countdown" id="pm-countdown"></span></div>
+        <div class="odds" id="pm-odds"></div>
+        <div class="chart short" id="c-pm-next"></div>
+        <a class="btn neon gold" id="pm-next-link" target="_blank" rel="noopener">View market on Polymarket ↗</a>
+      </div>
+      <div class="card">
+        <div class="head"><div><h2>2026 win totals</h2><p class="sub">Market odds that each team finishes the season above each win line</p></div>
+          <div class="legend"><span><i class="dot stanford"></i>Stanford</span><span><i class="dot cal"></i>Cal</span></div></div>
+        <div class="chart" id="c-pm-wins"></div>
+        <div class="pm-links" id="pm-win-links"></div>
+      </div>
+      <div class="card">
+        <div class="head"><div><h2>2025: the market vs the result</h2><p class="sub" id="pm-2025-sub">Stanford's implied win probability in the week before kickoff</p></div></div>
+        <div class="chart" id="c-pm-2025"></div>
+        <div class="pm-links" id="pm-2025-link"></div>
+      </div>
+    </section>
+    <p class="fine" id="pm-foot">Prices are Polymarket's implied probabilities, read from its public API and refreshed every 2 minutes. They're shown for context only, not as betting advice, and Polymarket may not be available where you live.</p>
+  </section>
+
+  <!-- ============ SEASON VIEW ============ -->
+  <main id="season-view">
+    <section class="scoreboard" id="scoreboard"></section>
+    <section class="tiles" id="tiles"></section>
+    <div class="callout hidden" id="unlabeled"></div>
+
+    <h2 class="section-title">Game day</h2>
+    <section class="grid g-2">
+      <div class="card">
+        <div class="head">
+          <div>
+            <h2>Game-day replay</h2>
+            <p class="sub">Sentiment momentum over a rolling 60-minute window, updated every 15 minutes from kickoff. Above zero, Stanford fans feel better than Cal fans; below zero, the reverse. Dots are scoring plays.</p>
+          </div>
+          <div class="legend">
+            <span><i class="dot stanford"></i>Stanford ahead in mood</span>
+            <span><i class="dot cal"></i>Cal ahead in mood</span>
+          </div>
+        </div>
+        <div class="replay-bar">
+          <button class="btn primary" id="play">▶ Replay</button>
+          <input type="range" id="scrub" min="-180" max="420" step="15" value="-180" aria-label="Minutes from kickoff">
+          <span class="clock" id="clock"></span>
+        </div>
+        <div class="chart tall" id="c-momentum"></div>
+        <div class="chart short" id="c-volume"></div>
+      </div>
+      <div class="card">
+        <div class="head">
+          <div>
+            <h2>What people were saying</h2>
+            <p class="sub" id="feed-sub">Most-liked comments near the replay cursor</p>
+          </div>
+          <div class="live-score" id="live-score"></div>
+        </div>
+        <div class="feed" id="feed"></div>
+      </div>
+    </section>
+
+    <h2 class="section-title">The conversation</h2>
+    <section class="grid g-2e">
+      <div class="card">
+        <div class="head">
+          <div><h2>Fan mood over the season window</h2><p class="sub">Average sentiment of each side's fans per 24 hours, counted from kickoff (−2 to +2). The gap is the momentum. Days with fewer than 3 posts from a side are left blank.</p></div>
+          <div class="legend"><span><i class="dot stanford"></i>Stanford fans</span><span><i class="dot cal"></i>Cal fans</span></div>
+        </div>
+        <div class="chart" id="c-mood"></div>
+      </div>
+      <div class="card">
+        <div class="head">
+          <div><h2>Who's talking</h2><p class="sub">Comments and videos per 24 hours from kickoff, split by the side the author leans to</p></div>
+          <div class="legend"><span><i class="dot stanford"></i>Stanford</span><span><i class="dot cal"></i>Cal</span><span><i class="dot neutral"></i>Neutral</span><span><i class="dot unclear"></i>Unlabeled / unclear</span></div>
+        </div>
+        <div class="chart" id="c-share"></div>
+      </div>
+    </section>
+
+    <section class="grid g-2e">
+      <div class="card">
+        <div class="head">
+          <div><h2>Emotions by side</h2><p class="sub">Dominant emotion of each labeled item</p></div>
+          <div class="legend"><span><i class="dot stanford"></i>Stanford fans</span><span><i class="dot cal"></i>Cal fans</span></div>
+        </div>
+        <div class="chart" id="c-emotions"></div>
+      </div>
+      <div class="card">
+        <div class="head"><div><h2>Topics</h2><p class="sub">What the conversation touched (an item can have several)</p></div></div>
+        <div class="chart" id="c-topics"></div>
+      </div>
+    </section>
+
+    <!-- ---------- teams & players ---------- -->
+    <h2 class="section-title">Teams &amp; players</h2>
+    <section class="grid g-2e">
+      <div class="card">
+        <div class="head"><div><h2>Head coaches</h2><p class="sub">Who ran each sideline that year</p></div></div>
+        <div class="coaches" id="coaches"></div>
+      </div>
+      <div class="card">
+        <div class="head"><div><h2>Team stats</h2><p class="sub">Box score, side by side. The bar shows each team's share of the combined total.</p></div>
+          <div class="legend"><span><i class="dot stanford"></i>Stanford</span><span><i class="dot cal"></i>Cal</span></div></div>
+        <div class="tug" id="tug"></div>
+      </div>
+    </section>
+    <section class="grid g-2e">
+      <div class="card">
+        <div class="head"><div><h2>Top performers · Stanford</h2><p class="sub">Ranked by impact score (see the note below)</p></div></div>
+        <div class="perf" id="perf-stanford"></div>
+      </div>
+      <div class="card">
+        <div class="head"><div><h2>Top performers · Cal</h2><p class="sub">Ranked by impact score (see the note below)</p></div></div>
+        <div class="perf" id="perf-cal"></div>
+      </div>
+    </section>
+    <p class="fine">Impact score is a fantasy-style summary of the box score: pass yds/25 + 4·pass TD − 2·INT, rush and receiving yds/10 + 6·TD + 0.5·rec, tackles + 3·sacks + TFL + pass deflections + 5·interceptions, kicking points. It is a rough way to rank players, not an official rating.</p>
+    <section class="grid g-2">
+      <div class="card">
+        <div class="head"><div><h2>Fan buzz</h2><p class="sub">How often TikTok comments and captions named each coach or player that season, colored by team. Hover for the average sentiment of those mentions.</p></div>
+          <div class="legend"><span><i class="dot stanford"></i>Stanford</span><span><i class="dot cal"></i>Cal</span></div></div>
+        <div class="chart" id="c-buzz"></div>
+      </div>
+      <div class="card">
+        <div class="head"><div><h2>Most-liked mention</h2><p class="sub">The top comment naming each person</p></div></div>
+        <div class="feed" id="buzz-list"></div>
+      </div>
+    </section>
+    <section class="grid">
+      <div class="card">
+        <div class="head"><div><h2>Rosters</h2><p class="sub">Season rosters from ESPN, with each player's game stats if they recorded any. ESPN's rosters sometimes carry players who had left the team.</p></div></div>
+        <div class="tbl-tools">
+          <input id="rq" placeholder="Search name or hometown…">
+          <select id="r-team"><option value="">Both teams</option><option value="stanford">Stanford</option><option value="cal">Cal</option></select>
+          <select id="r-pos"><option value="">All positions</option></select>
+          <select id="r-played"><option value="">Everyone</option><option value="1">Recorded stats in this game</option></select>
+        </div>
+        <div class="tbl-wrap"><table id="t-roster"></table></div>
+      </div>
+    </section>
+
+    <h2 class="section-title">Under the hood</h2>
+    <section class="grid g-2e">
+      <div class="card">
+        <div class="head"><div><h2>Model agreement</h2><p class="sub">Each item is labeled independently by Haiku, Sonnet and Opus. The final label is a majority vote (sentiment is the average).</p></div></div>
+        <div id="agree"></div>
+        <div class="chart short" id="c-models"></div>
+      </div>
+      <div class="card">
+        <div class="head"><div><h2>Where the models disagree</h2><p class="sub">Liked comments whose sentiment scores differ by 2 or more points. Often sarcasm, inside jokes or emoji-only replies.</p></div></div>
+        <div class="feed" id="disagree"></div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="head"><div><h2>Top videos</h2><p class="sub">Most-viewed on-topic videos. Counts are as of collection time.</p></div></div>
+        <div class="tbl-wrap"><table id="t-videos"></table></div>
+      </div>
+      <div class="card">
+        <div class="head"><div><h2>Comments</h2><p class="sub">Most-liked labeled comments (commenter names are not shown)</p></div></div>
+        <div class="tbl-tools">
+          <input id="q" placeholder="Search comments…">
+          <select id="f-stance"><option value="">All sides</option><option value="stanford">Stanford</option><option value="cal">Cal</option><option value="neutral">Neutral</option></select>
+        </div>
+        <div class="tbl-wrap"><table id="t-comments"></table></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ COMPARE VIEW ============ -->
+  <main id="compare-view" class="hidden">
+    <h2 class="section-title">Six Big Games</h2>
+    <section class="grid">
+      <div class="card">
+        <div class="head">
+          <div><h2>Six Big Games, one clock</h2><p class="sub">Game-day momentum for each year, lined up from kickoff (−3h to +7h). The winner is shown in the title.</p></div>
+          <div class="legend"><span><i class="dot stanford"></i>Stanford ahead in mood</span><span><i class="dot cal"></i>Cal ahead in mood</span></div>
+        </div>
+        <div class="multiples" id="multiples"></div>
+      </div>
+    </section>
+    <section class="grid g-2e">
+      <div class="card">
+        <div class="head"><div><h2>Momentum by year</h2><p class="sub">Stanford-fan mood minus Cal-fan mood, kickoff to +48h. Most TikTok reaction comes after the game. 2020 is blank: too few posts.</p></div></div>
+        <div class="chart" id="c-yoy"></div>
+      </div>
+      <div class="card">
+        <div class="head"><div><h2>Volume by year</h2><p class="sub">On-topic videos and collected comments</p></div>
+          <div class="legend"><span><i class="dot" style="background:var(--ink-2)"></i>Comments collected</span></div></div>
+        <div class="chart" id="c-yoy-vol"></div>
+      </div>
+    </section>
+    <section class="grid">
+      <div class="card">
+        <div class="head"><div><h2>Season table</h2><p class="sub">Summary of every season</p></div></div>
+        <div class="tbl-wrap"><table id="t-seasons"></table></div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="foot">
+    <img src="assets/logo.png" alt="">
+    <div>
+    <p class="credits"><b>Data from TikTok</b> (Research API) · <b>Sentiment analysis by Claude</b> (Haiku, Sonnet and Opus, combined by majority vote) · Game records from ESPN · Odds from Polymarket</p>
+    TikTok data comes from the Research API (research.data.basic). Engagement counts are as of collection time, not posting time. Research Data is TikTok Confidential Information: share it only within the approved research team. Videos become searchable up to 48h after posting, and the API under-returns content from before 2021.
+    </div>
+  </footer>
+</div>
+<script src="app.js?v=3"></script>
+</body>
+</html>

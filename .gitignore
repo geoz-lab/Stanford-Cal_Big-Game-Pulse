@@ -1,0 +1,15 @@
+# secrets and research data: never commit
+.env
+data/
+logs/
+
+# environment
+.venv/
+__pycache__/
+*.pyc
+.vscode/
+.DS_Store
+
+# original full-size artwork (optimized copies live in frontend/assets/)
+/Cyberpunk Big Game_ Stanford vs Cal.png
+/big_game_icon.png
