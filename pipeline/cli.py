@@ -1,4 +1,4 @@
-"""biggame CLI: games | football | collect | status | label | build | serve"""
+"""biggame CLI: games | football | collect | status | label | build | serve | export"""
 
 from __future__ import annotations
 
@@ -19,6 +19,8 @@ def main(argv: list[str] | None = None) -> int:
     lab.add_argument("--limit", type=int, default=None)
     lab.add_argument("--sync", action="store_true", help="use synchronous calls instead of the Batch API")
     sub.add_parser("build", help="build the dashboard dataset")
+    ex = sub.add_parser("export", help="standalone HTML dashboard + zip in dist/")
+    ex.add_argument("--public", action="store_true", help="results only: no comment text, creators or video links")
     srv = sub.add_parser("serve", help="run the dashboard")
     srv.add_argument("--port", type=int, default=8050)
     a = p.parse_args(argv)
@@ -42,6 +44,9 @@ def main(argv: list[str] | None = None) -> int:
     elif a.cmd == "build":
         from .build import build
         build()
+    elif a.cmd == "export":
+        from .export import export
+        print(export(public=a.public))
     elif a.cmd == "serve":
         import uvicorn
         uvicorn.run("backend.app:app", host="127.0.0.1", port=a.port)

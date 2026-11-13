@@ -8,10 +8,46 @@ odds (Polymarket).
 
 **Data from TikTok · Sentiment analysis by Claude · Game records from ESPN · Odds from Polymarket**
 
-> This repository holds code only. No TikTok data, labels or results are included: TikTok
-> Research API data is confidential to the approved research team, and findings go to TikTok for
-> review before publication. To run it you need your own Research API access and an Anthropic
-> API key.
+> **What's published here:** the code, aggregate results and screenshots of the dashboard's
+> public version. **What isn't:** any TikTok Research Data itself. No comment text, captions,
+> creator names, video links or per-item labels appear in this repository or its screenshots,
+> per the [TikTok Research Tools Terms](https://www.tiktok.com/legal/page/global/terms-of-service-research-api/en).
+> To run the pipeline you need your own Research API access and an Anthropic API key.
+
+## Screenshots
+
+Taken from the public version of the dashboard (`biggame export --public`), where comment text,
+creators and video links are replaced by a note.
+
+**Overview: 2025 season.** Scoreboard, Polymarket kickoff odds and headline numbers.
+
+![Overview](docs/screenshots/overview.png)
+
+**Game day.** Rolling sentiment momentum from kickoff with scoring plays, and post volume per
+15 minutes. Above zero, Stanford fans feel better than Cal fans.
+
+![Game day](docs/screenshots/game-day.png)
+
+**The conversation.** Daily mood per side, who's talking, emotions and topics.
+
+![The conversation](docs/screenshots/conversation.png)
+
+**Teams & players.** Coaches, team box score and top performers (ESPN).
+
+![Teams and players](docs/screenshots/teams-players.png)
+
+**Under the hood.** How often Haiku, Sonnet and Opus agree.
+
+![Model agreement](docs/screenshots/model-agreement.png)
+
+**All years.** In-game momentum curves, momentum and volume by year, and the season table.
+
+![All years](docs/screenshots/all-years.png)
+
+**2026 odds.** Opens from the season bar: next Big Game, win totals, and the 2025 market vs the
+result (Polymarket).
+
+![Betting odds](docs/screenshots/odds.png)
 
 ```
 TikTok Research API ──► pipeline/collect ──► data/<year>_biggame/{videos,comments}.jsonl
@@ -69,6 +105,7 @@ Its README documents every Research API endpoint, limit and known issue.
 | `biggame label [--models haiku,sonnet,opus] [--limit N] [--sync]` | LLM labeling; Batch API by default (50% cheaper), `--sync` for quick pilots |
 | `biggame build` | Ensemble labels, compute timelines and agreement, write `data/dashboard/` |
 | `biggame serve [--port 8050]` | Dashboard on localhost (also has a **Rebuild** button) |
+| `biggame export [--public]` | One self-contained HTML file (data, charts, images inlined) plus a zip in `dist/`; opens with a double-click, no server. The default **full** version includes comment text and creators and stays within the approved team. `--public` keeps aggregate results only |
 
 ## Seasons
 
@@ -84,6 +121,16 @@ Defined in `seasons.yaml` (dates, ESPN game IDs, venues). Scores and kickoffs co
 | 2025 | Sat Nov 22 | Stanford | Stanford 31–10 | 4:30 pm |
 
 The collection window runs from 12 days before to 15 days after each game.
+
+## Data collected
+
+Collected Nov 11–12, 2026 (counts as of collection):
+
+| | 2020 | 2021 | 2022 | 2023 | 2024 | 2025 |
+|---|---|---|---|---|---|---|
+| Videos matched | 107 | 297 | 552 | 932 | 1,289 | 1,857 |
+| On-topic (`big_game`) | 10 | 43 | 107 | 96 | 150 | 326 |
+| Comments on on-topic videos | 65 | 242 | 481 | 353 | 1,062 | 1,869 |
 
 ## Method
 
@@ -135,6 +182,29 @@ plays use ESPN wall-clock times.
 
 **Estimated LLM cost:** a few thousand items through the Batch API costs roughly $10–15 in total,
 mostly Opus. Run `--limit` pilots first.
+
+## Results
+
+Labels from Nov 12, 2026. Momentum is Stanford-fan mood minus Cal-fan mood (scale −2 to +2),
+from kickoff to 48 hours after.
+
+| Season | Winner | Relevant labeled items | Stanford-leaning | Cal-leaning | Momentum, kickoff to +48h |
+|---|---|---|---|---|---|
+| 2020 | Stanford | 17 | 2 | 10 | – (too few) |
+| 2021 | Cal | 202 | 22 | 110 | −1.84 |
+| 2022 | Cal | 260 | 21 | 155 | −1.88 |
+| 2023 | Cal | 150 | 15 | 85 | −1.46 |
+| 2024 | Cal | 645 | 66 | 373 | −1.09 |
+| 2025 | Stanford | 1,575 | 300 | 615 | +1.34 |
+
+- The sign of the momentum matches the winner in every season with enough data.
+- Cal-leaning voices outnumber Stanford-leaning ones every year.
+- Few comments are posted during the game. Only 2025 has enough to draw a full in-game curve; the
+  other years show up mainly in the post-game and daily views.
+- In 2025, Opus and Sonnet agree on fan side for 90% of items (κ 0.70 on exact stance, sentiment
+  r 0.84). Haiku agrees with them on about 78–80%.
+
+These are LLM measurements with error, not survey estimates (see Caveats).
 
 ## Dashboard
 
@@ -188,6 +258,7 @@ pipeline/            Python package: the data + analysis code
   relevance.py       rule-based relevance tiers
   label.py           multi-model LLM labeling (Batch API)
   build.py           ensemble, timelines, agreement → data/dashboard/
+  export.py          standalone HTML dashboard (full or public) → dist/
   status.py, cli.py
 backend/app.py       FastAPI: /api/index, /api/season/{year}, /api/compare, /api/markets, /api/rebuild, static frontend
 frontend/            index.html, app.js, styles.css, vendor/echarts.min.js (5.5.1, bundled), assets/ (hero, logo, favicon)
@@ -198,15 +269,20 @@ data/                (local only, git-ignored)
   dashboard/         built JSON the backend serves
   .quota.json        local request ledger
 logs/                collection and server logs (git-ignored)
+dist/                standalone exports and zips (git-ignored)
+docs/screenshots/    README images, from the public export
 ```
 
 ## Caveats and rules
 
-- **TikTok Confidential.** Research Data, even aggregated, may only be shared within the
-  approved team. `data/` and `.env` are git-ignored; keep it that way. The dashboard binds to
-  `127.0.0.1` only. Publications go to TikTok 7 days in
-  advance, with no individual users identifiable. This folder syncs to OneDrive; check that this
-  meets the data-security terms, or point `TTR_DATA_DIR` at local encrypted storage.
+- **TikTok Confidential (Terms IV).** Research Data, including aggregated or derived data, stays
+  within the approved team. `data/`, `dist/` and `.env` are git-ignored; keep it that way. The
+  full export holds comment text and creators: never post it. The dashboard binds to `127.0.0.1`
+  only. This folder syncs to OneDrive; check that this meets the data-security terms, or point
+  `TTR_DATA_DIR` at local encrypted storage.
+- **Publication (Terms III(f)).** TikTok receives a copy of anything with results at least 7 days
+  before it is published, outputs must credit TikTok, and nothing may be linkable to an
+  individual user. This repository stays private until that review period has passed.
 - **LLM processing** sends comment text to the Anthropic API. The project owner confirmed this is
   permitted for this project.
 - **Refresh at least every 30 days.** The Terms require re-fetching stored data. Re-running

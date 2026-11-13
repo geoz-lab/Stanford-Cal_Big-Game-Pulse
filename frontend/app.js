@@ -19,7 +19,18 @@ const tLabel = (m) => {
 };
 const sideName = { stanford: "Stanford", cal: "Cal", neutral: "Neutral", unclear: "Unclear" };
 const emojiAxe = "🪓";
+/* Standalone export (biggame export): data is embedded in window.__BG__, no server needed. */
+const STATIC = window.__BG__ || null;
+const PUBLIC = !!STATIC?.public;  // public version: no comment text, creators or video links
+const HIDDEN = `<div class="empty">Comment text, creators and video links are left out of the public version (TikTok Research API terms).</div>`;
 async function api(path) {
+  if (STATIC) {
+    const m = path.match(/^\/api\/season\/(\d+)/);
+    const v = path === "/api/index" ? STATIC.index : path === "/api/compare" ? STATIC.compare
+      : path === "/api/markets" ? STATIC.markets : m ? STATIC.seasons[m[1]] : null;
+    if (!v) throw new Error("not included in this export");
+    return v;
+  }
   const r = await fetch(path);
   if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || r.statusText);
   return r.json();
@@ -300,12 +311,14 @@ function cmtHTML(x, extra = "") {
 }
 
 function renderDisagree() {
+  if (PUBLIC) return void ($("#disagree").innerHTML = HIDDEN);
   const d = state.data.disagreements || [];
   $("#disagree").innerHTML = d.length ? d.map((x) => cmtHTML(x, `<span class="chip">spread ${x.sentiment_spread}</span>`)).join("")
     : `<div class="empty">No strong disagreements (or no labels yet)</div>`;
 }
 
 function renderVideos() {
+  if (PUBLIC) return void ($("#t-videos").innerHTML = `<tr><td>${HIDDEN}</td></tr>`);
   const v = state.data.top_videos || [];
   $("#t-videos").innerHTML = `<tr><th>Posted (PT)</th><th class="num">vs kickoff</th><th>Creator</th><th>Caption</th><th class="num">Views</th><th class="num">Likes</th><th class="num">Comments</th><th>Side</th><th class="num">Mood</th></tr>` +
     v.map((x) => `<tr><td>${esc(x.created_pt)}</td><td class="num">${tLabel(x.t_min)}</td><td><a href="${esc(x.url)}" target="_blank" rel="noopener">@${esc(x.username)}</a></td>
@@ -315,6 +328,7 @@ function renderVideos() {
 }
 
 function renderComments() {
+  if (PUBLIC) return void ($("#t-comments").innerHTML = `<tr><td>${HIDDEN}</td></tr>`);
   const q = $("#q").value.toLowerCase(), f = $("#f-stance").value;
   const rows = (state.data.top_comments || []).filter((x) => (!q || String(x.text).toLowerCase().includes(q)) && (!f || x.stance === f));
   $("#t-comments").innerHTML = `<tr><th>Comment</th><th class="num">vs kickoff</th><th class="num">Likes</th><th>Side</th><th class="num">Mood</th><th>Emotion</th></tr>` +
@@ -378,7 +392,7 @@ function renderFootball() {
         label: { show: true, position: "right", color: c.ink2, fontSize: 11 } }],
     });
   }
-  $("#buzz-list").innerHTML = buzz.length ? buzz.map((b) => `<div class="cmt ${b.team}"><b>${esc(b.name)}</b>: ${esc(b.top_text)}
+  $("#buzz-list").innerHTML = PUBLIC ? HIDDEN : buzz.length ? buzz.map((b) => `<div class="cmt ${b.team}"><b>${esc(b.name)}</b>: ${esc(b.top_text)}
       <div class="m"><span>♥ ${fmt(b.top_likes)}</span><span class="chip">${b.mentions} mentions</span>${b.sentiment != null ? `<span class="chip">mood ${sgn(b.sentiment, 1)}</span>` : ""}${b.played ? "" : `<span class="chip">ESPN roster only</span>`}</div></div>`).join("")
     : `<div class="empty">No mentions</div>`;
 
@@ -417,7 +431,7 @@ function setCursor(t) {
   if (cm) cm.setOption({ series: [{}, {}, { markLine: { data: momentumMarks(C(), t) } }] });
   const near = (state.data.feed || []).filter((x) => x.t_min >= t - 30 && x.t_min < t + 15).sort((a, b) => b.likes - a.likes).slice(0, 25);
   $("#feed-sub").textContent = `Most-liked comments from ${tLabel(t - 30)} to ${tLabel(t + 15)}`;
-  $("#feed").innerHTML = near.length ? near.map((x) => cmtHTML(x)).join("") : `<div class="empty">${(state.data.feed || []).length ? "No labeled comments in this window" : "Labeled comments appear here once sentiment has run"}</div>`;
+  $("#feed").innerHTML = PUBLIC ? HIDDEN : near.length ? near.map((x) => cmtHTML(x)).join("") : `<div class="empty">${(state.data.feed || []).length ? "No labeled comments in this window" : "Labeled comments appear here once sentiment has run"}</div>`;
 }
 function stopReplay() { clearInterval(state.timer); state.timer = null; $("#play").textContent = "▶ Replay"; }
 $("#scrub").oninput = (e) => { stopReplay(); setCursor(+e.target.value); };
@@ -562,6 +576,7 @@ $("#close-odds").onclick = () => { showOdds(false); $("#dash").scrollIntoView({ 
 
 /* ---------------- hero ---------------- */
 function countUp(el, to, fmtFn = fmt, ms = 1100) {
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return void (el.textContent = fmtFn(to));
   const t0 = performance.now();
   const step = (t) => { const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3); el.textContent = fmtFn(Math.round(to * e)); if (k < 1) requestAnimationFrame(step); };
   requestAnimationFrame(step);
@@ -597,6 +612,12 @@ $("#rebuild").onclick = async () => {
 };
 
 (async function boot() {
+  if (STATIC) {  // no backend to rebuild from; say when the snapshot was taken
+    $("#rebuild").remove();
+    const n = document.createElement("p"); n.className = "snap";
+    n.textContent = `${PUBLIC ? "Public version: aggregate results only" : "Full version: contains TikTok Research Data, share only within the approved research team"} · data snapshot ${new Date(STATIC.exported_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}, odds as of the same day.`;
+    $("#foot > div").prepend(n);
+  }
   try {
     state.index = await api("/api/index");
   } catch (e) {
@@ -606,5 +627,8 @@ $("#rebuild").onclick = async () => {
   loadMarkets(); setInterval(loadMarkets, 120000);
   let saved = null; try { saved = localStorage.getItem("bg-year"); } catch (e) {}
   const years = state.index.seasons.map((s) => s.year);
+  const hash = location.hash.slice(1);  // deep links: #2023, #compare, #odds
+  if (hash === "compare" || years.includes(+hash)) saved = hash;
   await select(saved === "compare" ? "compare" : years.includes(+saved) ? +saved : years[years.length - 1]);
+  if (hash === "odds") showOdds(true);
 })();
