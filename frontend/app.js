@@ -569,12 +569,12 @@ async function loadMarkets() {
     if (first && state.data && state.year !== "compare" && state.markets.big_game?.[state.year]) renderSeason();
   } catch (e) { $("#pm-odds").innerHTML = `<div class="empty">Couldn't reach Polymarket: ${esc(e.message)}</div>`; }
 }
-function showOdds(open = true) {
+function showOdds(open = true, scroll = true) {
   const sec = $("#markets");
   sec.classList.toggle("hidden", !open);
   $("#go-odds").setAttribute("aria-expanded", String(open));
   $("#go-odds .r").textContent = open ? "📈 Hide" : "📈 Polymarket";
-  if (open) { renderMarkets(); sec.scrollIntoView({ behavior: "smooth" }); }  // charts need a visible container to size
+  if (open) { renderMarkets(); if (scroll) sec.scrollIntoView({ behavior: "smooth" }); }  // charts need a visible container to size
 }
 $("#cta-odds").onclick = () => showOdds(true);
 $("#close-odds").onclick = () => { showOdds(false); $("#dash").scrollIntoView({ behavior: "smooth" }); };
@@ -638,5 +638,5 @@ $("#rebuild").onclick = async () => {
   if (hash === "compare" || years.includes(+hash)) saved = hash;
   const played = state.index.seasons.filter((s) => s.winner).map((s) => s.year);
   await select(saved === "compare" ? "compare" : years.includes(+saved) ? +saved : played[played.length - 1] ?? years[years.length - 1]);
-  if (hash === "odds") showOdds(true);
+  showOdds(true, hash === "odds");  // the 2026 odds open first; only #odds jumps straight to them
 })();
