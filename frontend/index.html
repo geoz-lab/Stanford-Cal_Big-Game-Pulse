@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=6">
   <script src="vendor/echarts.min.js?v=5.5.1"></script>
 </head>
 <body>
@@ -17,13 +17,13 @@
     <div class="wrap hero-inner">
     <div class="hero-copy">
       <img class="logo" src="assets/logo.png" alt="Big Game logo: Cal and Stanford with the Axe">
-      <div class="kicker">Stanford vs Cal · 2020–2025</div>
+      <div class="kicker">Stanford vs Cal · 2020–2026</div>
       <h1>Big Game Pulse</h1>
-      <p class="lede">Six rivalry games and thousands of fan comments. See how Stanford and Cal fans felt before, during and after each Big Game.</p>
+      <p class="lede">Six rivalry games, the build-up to 2026, and thousands of fan comments. See how Stanford and Cal fans felt before, during and after each Big Game.</p>
       <div class="hero-stats" id="hero-stats"></div>
       <div class="cta">
         <button class="btn neon st" id="cta-replay">▶ Replay the latest game</button>
-        <button class="btn neon ca" id="cta-compare">Compare all six years</button>
+        <button class="btn neon ca" id="cta-compare">Compare all years</button>
         <button class="btn neon gold" id="cta-odds">📈 2026 betting odds</button>
       </div>
     </div>
@@ -217,11 +217,11 @@
 
   <!-- ============ COMPARE VIEW ============ -->
   <main id="compare-view" class="hidden">
-    <h2 class="section-title">Six Big Games</h2>
+    <h2 class="section-title">Every Big Game</h2>
     <section class="grid">
       <div class="card">
         <div class="head">
-          <div><h2>Six Big Games, one clock</h2><p class="sub">Game-day momentum for each year, lined up from kickoff (−3h to +7h). The winner is shown in the title.</p></div>
+          <div><h2>Every Big Game, one clock</h2><p class="sub">Game-day momentum for each year, lined up from kickoff (−3h to +7h). The winner is shown in the title.</p></div>
           <div class="legend"><span><i class="dot stanford"></i>Stanford ahead in mood</span><span><i class="dot cal"></i>Cal ahead in mood</span></div>
         </div>
         <div class="multiples" id="multiples"></div>
@@ -254,6 +254,6 @@
     </div>
   </footer>
 </div>
-<script src="app.js?v=4"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>

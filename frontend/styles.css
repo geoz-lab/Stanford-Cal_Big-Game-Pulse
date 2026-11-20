@@ -271,3 +271,5 @@ nav.seasons button.odds-tab .y { color: var(--gold); }
 nav.seasons button.odds-tab[aria-expanded="true"] { border-style: solid; box-shadow: 0 0 18px -6px rgba(160,123,18,.45); }
 footer .snap { margin: 0 0 8px; font-weight: 600; color: var(--ink-2); }
 @media (prefers-reduced-motion: reduce) { #markets { animation: none; } html { scroll-behavior: auto; } }
+nav.seasons button[aria-selected="true"].w-upcoming { border-color: var(--gold); box-shadow: 0 0 18px -6px rgba(160,123,18,.45); }
+.nav-row .home-link { flex: 0 0 auto; white-space: nowrap; }

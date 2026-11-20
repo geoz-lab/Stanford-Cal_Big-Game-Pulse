@@ -1,7 +1,8 @@
-# Big Game Pulse: Stanford vs. Cal on TikTok, 2020–2025
+# Big Game Pulse: Stanford vs. Cal on TikTok, 2020–2026
 
 How did fans feel about the Big Game? This project collects every on-topic TikTok video and
-comment from the 2020–2025 Stanford–Cal football games, has three Claude models label each one
+comment from the 2020–2025 Stanford–Cal football games and the build-up to the 2026 game, has
+three Claude models label each one
 for fan side, sentiment and emotion, and replays the mood against the scoreboard in a local
 dashboard. The dashboard also includes coaches, players and box scores (ESPN) and live betting
 odds (Polymarket).
@@ -19,7 +20,8 @@ odds (Polymarket).
 Taken from the public version of the dashboard (`biggame export --public`), where comment text,
 creators and video links are replaced by a note.
 
-**Overview: 2025 season.** Scoreboard, Polymarket kickoff odds and headline numbers.
+**Overview: 2025 season.** Scoreboard, Polymarket kickoff odds and headline numbers. Screenshots
+reflect data as of Nov 20, 2026.
 
 ![Overview](docs/screenshots/overview.png)
 
@@ -40,12 +42,17 @@ creators and video links are replaced by a note.
 
 ![Model agreement](docs/screenshots/model-agreement.png)
 
+**2026 build-up.** The game hasn't been played yet: the scoreboard shows the kickoff time and each
+team's record going in, and the charts cover TikTok posts from Nov 9 to the latest update.
+
+![2026 build-up](docs/screenshots/build-up-2026.png)
+
 **All years.** In-game momentum curves, momentum and volume by year, and the season table.
 
 ![All years](docs/screenshots/all-years.png)
 
 **2026 odds.** Opens from the season bar: next Big Game, win totals, and the 2025 market vs the
-result (Polymarket).
+result (Polymarket). Shown as of Nov 20, 2026, the day before the game.
 
 ![Betting odds](docs/screenshots/odds.png)
 
@@ -119,26 +126,31 @@ Defined in `seasons.yaml` (dates, ESPN game IDs, venues). Scores and kickoffs co
 | 2023 | Sat Nov 18 | Stanford | Cal 27–15 | 3:30 pm |
 | 2024 | Sat Nov 23 | Berkeley | Cal 24–21 | 12:30 pm |
 | 2025 | Sat Nov 22 | Stanford | Stanford 31–10 | 4:30 pm |
+| 2026 | Sat Nov 21 | Berkeley | not played yet | 4:30 pm |
 
-The collection window runs from 12 days before to 15 days after each game.
+The collection window runs from 12 days before to 15 days after each game, and never past the day
+of the run, so a season in progress (2026) grows each time `collect`, `label` and `build` are re-run.
+Its head coaches are Tavita Pritchard (Stanford) and Tosh Lupoi (Cal).
 
 ## Data collected
 
-Collected Nov 11–12, 2026 (counts as of collection):
+First collected Nov 11–12, 2026, and fully re-collected on Nov 20, 2026 (TikTok's terms require
+refreshing stored data at least every 30 days; the re-run picks up current counts and drops deleted
+content). Counts as of Nov 20; 2026 covers Nov 9–20, before the game:
 
-| | 2020 | 2021 | 2022 | 2023 | 2024 | 2025 |
-|---|---|---|---|---|---|---|
-| Videos matched | 107 | 297 | 552 | 932 | 1,289 | 1,857 |
-| On-topic (`big_game`) | 10 | 43 | 107 | 96 | 150 | 326 |
-| Comments on on-topic videos | 65 | 242 | 481 | 353 | 1,062 | 1,869 |
+| | 2020 | 2021 | 2022 | 2023 | 2024 | 2025 | 2026 (pre-game) |
+|---|---|---|---|---|---|---|---|
+| Videos matched | 108 | 290 | 552 | 937 | 1,287 | 1,855 | 1,289 |
+| On-topic (`big_game`) | 10 | 43 | 106 | 95 | 149 | 332 | 44 |
+| Comments on on-topic videos | 65 | 244 | 486 | 348 | 1,072 | 1,907 | 195 |
 
 ## Method
 
 **Relevance.** TikTok matches keywords fuzzily, so most matches aren't about the game. A rule
 filter (`pipeline/relevance.py`) reads the caption, hashtags, transcript and on-screen text, and
 sorts each video into `big_game`, `team_football`, `off_topic` (big-game *hunting*) or
-`unrelated`. Only `big_game` videos are analyzed. Each year's final score (e.g. "31-10") also
-counts as a rivalry marker.
+`unrelated`. Only `big_game` videos are analyzed. Once a game is over, its final score (e.g.
+"31-10") also counts as a rivalry marker.
 
 **Labels.** Each request carries one video's context (season result, caption, transcript,
 on-screen text) and up to 40 of its comments, each stamped with its time relative to kickoff.
@@ -185,24 +197,27 @@ mostly Opus. Run `--limit` pilots first.
 
 ## Results
 
-Labels from Nov 12, 2026. Momentum is Stanford-fan mood minus Cal-fan mood (scale −2 to +2),
+Labels as of Nov 20, 2026. Momentum is Stanford-fan mood minus Cal-fan mood (scale −2 to +2),
 from kickoff to 48 hours after.
 
 | Season | Winner | Relevant labeled items | Stanford-leaning | Cal-leaning | Momentum, kickoff to +48h |
 |---|---|---|---|---|---|
 | 2020 | Stanford | 17 | 2 | 10 | – (too few) |
-| 2021 | Cal | 202 | 22 | 110 | −1.84 |
-| 2022 | Cal | 260 | 21 | 155 | −1.88 |
-| 2023 | Cal | 150 | 15 | 85 | −1.46 |
-| 2024 | Cal | 645 | 66 | 373 | −1.09 |
-| 2025 | Stanford | 1,575 | 300 | 615 | +1.34 |
+| 2021 | Cal | 205 | 22 | 111 | −1.81 |
+| 2022 | Cal | 256 | 21 | 151 | −1.86 |
+| 2023 | Cal | 148 | 15 | 84 | −1.47 |
+| 2024 | Cal | 652 | 68 | 378 | −1.17 |
+| 2025 | Stanford | 1,574 | 310 | 615 | +1.30 |
+| 2026 | not played yet | 120 | 23 | 68 | – (pre-game mood +0.22) |
 
 - The sign of the momentum matches the winner in every season with enough data.
+- Before the 2026 game (Nov 9–20), Stanford-leaning fans are slightly more upbeat than Cal-leaning
+  fans (mean sentiment +1.06 vs +0.84), on a small sample.
 - Cal-leaning voices outnumber Stanford-leaning ones every year.
 - Few comments are posted during the game. Only 2025 has enough to draw a full in-game curve; the
   other years show up mainly in the post-game and daily views.
-- In 2025, Opus and Sonnet agree on fan side for 90% of items (κ 0.70 on exact stance, sentiment
-  r 0.84). Haiku agrees with them on about 78–80%.
+- In 2025, Opus and Sonnet agree on fan side for 90% of items (κ 0.71 on exact stance, sentiment
+  r 0.83). Haiku agrees with them on about 78–80%.
 
 These are LLM measurements with error, not survey estimates (see Caveats).
 
@@ -221,7 +236,7 @@ These are LLM measurements with error, not survey estimates (see Caveats).
     team box score, the top performers on each side (headshot, stat line, impact score), fan
     buzz (most-named coaches and players, with sentiment), and a searchable season roster with
     each player's Big Game stats.
-- **All years:** small multiples of the six game-day momentum curves on a shared clock, in-game
+- **All years:** small multiples of every game-day momentum curve on a shared clock, in-game
   momentum by year, comment volume, and a season table.
 
 The dashboard uses a single light theme. Stanford red (`#c8342f`) and Cal blue (`#2a78d6`) passed
@@ -237,7 +252,7 @@ minutes, and closed markets are cached on disk. Market slugs are listed in `seas
 
 | Card | Market |
 |---|---|
-| Next Big Game | `cfb-stan-cah-2026-11-21`: moneyline odds, a countdown to kickoff, price history and a link |
+| Next Big Game | `cfb-stan-cah-2026-11-21`: moneyline odds, a countdown to kickoff, price history and a link. On Nov 20, Stanford was 56.5% to win, with a Stanford −2.5 spread |
 | 2026 win totals | `ncaa-football-stanford-2026-win-total` and `ncaa-football-california-2026-win-total`: odds of finishing above each win line; settled lines are marked ✓/✗ |
 | 2025 market vs result | `cfb-cah-stan-2025-11-22`: Stanford opened at 43.5% and was 36.5% at kickoff, then won 31–10 ($225K traded) |
 

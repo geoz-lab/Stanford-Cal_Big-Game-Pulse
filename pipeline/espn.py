@@ -46,9 +46,12 @@ def fetch_game(year: int) -> dict:
                 wall[(play["period"]["number"], play["clock"]["displayValue"])] = play["wallclock"]
     for p in plays:
         p["wallclock"] = p["wallclock"] or wall.get((p["period"], p["clock"]))
-    winner = "stanford" if teams["stanford"]["winner"] else "cal"
+    status = comp.get("status", {}).get("type", {})
+    final = bool(status.get("completed"))
+    winner = ("stanford" if teams["stanford"]["winner"] else "cal") if final else None
     return {"year": year, "espn_id": s.espn_id, "kickoff_utc": comp["date"], "venue": s.venue, "home": s.home,
-            "note": s.note, "teams": teams, "winner": winner, "scoring_plays": plays}
+            "note": s.note, "teams": teams, "winner": winner, "final": final,
+            "status": status.get("description") or status.get("name"), "scoring_plays": plays}
 
 
 def refresh_games() -> None:

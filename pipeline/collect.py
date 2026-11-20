@@ -62,7 +62,8 @@ def load_videos(year: int, st: Study | None = None) -> pd.DataFrame:
     df = analysis.prepare(df)
     try:
         g = load_game(year)
-        score = (g["teams"]["stanford"]["score"], g["teams"]["cal"]["score"])
+        # The final score is a rivalry marker only once the game is over (a 0-0 placeholder would match noise).
+        score = (g["teams"]["stanford"]["score"], g["teams"]["cal"]["score"]) if g.get("winner") else None
     except FileNotFoundError:
         score = None
     pat = rivalry_pattern(score)

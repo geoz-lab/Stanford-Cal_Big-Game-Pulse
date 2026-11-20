@@ -14,12 +14,14 @@ keyword_pairs:
   kw_stanford_cal: ["stanford", "cal"]
 
 # Head coaches are curated here because ESPN's coach records list today's coach for every
-# past season. Verified 2026-11-12 (gostanford.com, ESPN, SF Chronicle, Daily Cal).
+# past season. Verified 2026-11-12 (gostanford.com, ESPN, SF Chronicle, Daily Cal); 2026 coaches verified 2026-11-20.
 coaches:
   shaw:    {name: David Shaw, team: stanford, tenure: "2011–2022", note: "Stanford's winningest coach; resigned after the 2022 season"}
   taylor:  {name: Troy Taylor, team: stanford, tenure: "2023–2024", note: "Hired from Sacramento State; fired March 2025"}
   reich:   {name: Frank Reich, team: stanford, tenure: "2025 (interim)", note: "Former NFL head coach; one-season interim deal under GM Andrew Luck"}
   wilcox:  {name: Justin Wilcox, team: cal, tenure: "2017–2025", note: "Fired Nov 23, 2025, the day after the 2025 Big Game; 48–55 overall"}
+  pritchard: {name: Tavita Pritchard, team: stanford, tenure: "2026–", note: "Stanford QB (2006–09) and longtime assistant; hired by GM Andrew Luck"}
+  lupoi:   {name: Tosh Lupoi, team: cal, tenure: "2026–", note: "Former Cal player and Oregon defensive coordinator; hired Dec 2025"}
 
 seasons:
   2020: {date: 2020-11-27, espn_id: 401249417, venue: California Memorial Stadium, home: cal,
@@ -30,6 +32,8 @@ seasons:
   2023: {date: 2023-11-18, espn_id: 401524061, venue: Stanford Stadium, home: stanford, coaches: {stanford: taylor, cal: wilcox}}
   2024: {date: 2024-11-23, espn_id: 401635613, venue: California Memorial Stadium, home: cal, coaches: {stanford: taylor, cal: wilcox}}
   2025: {date: 2025-11-22, espn_id: 401754599, venue: Stanford Stadium, home: stanford, coaches: {stanford: reich, cal: wilcox}}
+  2026: {date: 2026-11-21, espn_id: 401858308, venue: California Memorial Stadium, home: cal, coaches: {stanford: pritchard, cal: lupoi},
+         note: "Not played yet: TikTok posts from the build-up (from Nov 9), collected through the latest update."}
 
 # Polymarket prediction markets (public Gamma + CLOB APIs; no account or key needed).
 polymarket:

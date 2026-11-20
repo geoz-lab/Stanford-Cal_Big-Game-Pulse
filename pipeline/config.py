@@ -25,6 +25,10 @@ class Season:
     end: date
 
     @property
+    def upcoming(self) -> bool:
+        return self.date >= date.today()
+
+    @property
     def study(self) -> str:
         return f"{self.year}_biggame"
 
@@ -47,6 +51,7 @@ def seasons() -> dict[int, Season]:
             year=int(year), date=d, espn_id=int(s["espn_id"]), venue=s["venue"], home=s["home"],
             note=s.get("note", ""),
             start=d - timedelta(days=cfg["window_before_days"]),
-            end=d + timedelta(days=cfg["window_after_days"]),
+            # Collection can't run past today; an ongoing season's window grows on each re-run.
+            end=min(d + timedelta(days=cfg["window_after_days"]), date.today()),
         )
     return out

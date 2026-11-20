@@ -79,7 +79,8 @@ def box_score(espn_id: int) -> tuple[dict, dict, dict]:
     d = _get(SUMMARY, event=espn_id)
     abbr = lambda t: "stanford" if t["abbreviation"] == "STAN" else "cal"  # noqa: E731
     players: dict[str, dict] = {"stanford": {}, "cal": {}}
-    for t in d["boxscore"]["players"]:
+    box = d.get("boxscore") or {}
+    for t in box.get("players", []):
         side = abbr(t["team"])
         for cat in t["statistics"]:
             for a in cat["athletes"]:
@@ -87,7 +88,7 @@ def box_score(espn_id: int) -> tuple[dict, dict, dict]:
                 p = players[side].setdefault(ath["id"], {"id": ath["id"], "name": ath["displayName"],
                                                          "jersey": ath.get("jersey"), "stats": {}})
                 p["stats"][cat["name"]] = {lab: _num(v) for lab, v in zip(cat["labels"], a["stats"])}
-    team_stats = {abbr(t["team"]): {s["label"]: s["displayValue"] for s in t["statistics"]} for t in d["boxscore"]["teams"]}
+    team_stats = {abbr(t["team"]): {s["label"]: s["displayValue"] for s in t["statistics"]} for t in box.get("teams", []) if t.get("statistics")}
     records = {}
     for c in d["header"]["competitions"][0]["competitors"]:
         recs = {r.get("type"): r.get("summary") for r in c.get("record", [])}

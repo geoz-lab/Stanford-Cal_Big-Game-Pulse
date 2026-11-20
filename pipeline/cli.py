@@ -21,6 +21,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("build", help="build the dashboard dataset")
     ex = sub.add_parser("export", help="standalone HTML dashboard + zip in dist/")
     ex.add_argument("--public", action="store_true", help="results only: no comment text, creators or video links")
+    ex.add_argument("--home", help="add a '← Home' link to this URL in the top bar")
     srv = sub.add_parser("serve", help="run the dashboard")
     srv.add_argument("--port", type=int, default=8050)
     a = p.parse_args(argv)
@@ -46,7 +47,7 @@ def main(argv: list[str] | None = None) -> int:
         build()
     elif a.cmd == "export":
         from .export import export
-        print(export(public=a.public))
+        print(export(public=a.public, home=a.home))
     elif a.cmd == "serve":
         import uvicorn
         uvicorn.run("backend.app:app", host="127.0.0.1", port=a.port)

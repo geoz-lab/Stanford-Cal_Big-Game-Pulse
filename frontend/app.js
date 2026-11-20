@@ -17,6 +17,10 @@ const tLabel = (m) => {
   const a = Math.abs(m), h = Math.floor(a / 60), mm = Math.round(a % 60);
   return (m < 0 ? "−" : "+") + (h ? `${h}h` : "") + (mm ? `${String(mm).padStart(h ? 2 : 1, "0")}m` : "");
 };
+/* A season's result, or its date while the game is still to come (winner is null until ESPN marks it final). */
+const koShort = (iso) => new Date(iso).toLocaleDateString("en-US", { timeZone: "America/Los_Angeles", weekday: "short", month: "short", day: "numeric" });
+const result = (s) => s.winner ? `${s.winner === "stanford" ? "Stanford" : "Cal"} ${Math.max(s.stanford, s.cal)}–${Math.min(s.stanford, s.cal)}` : `${koShort(s.kickoff_utc)} · upcoming`;
+const resultDot = (s) => s.winner || "neutral";
 const sideName = { stanford: "Stanford", cal: "Cal", neutral: "Neutral", unclear: "Unclear" };
 const emojiAxe = "🪓";
 /* Standalone export (biggame export): data is embedded in window.__BG__, no server needed. */
@@ -69,12 +73,12 @@ function renderNav() {
   const nav = $("#seasons");
   const open = !$("#markets").classList.contains("hidden");
   nav.innerHTML = [...state.index.seasons].sort((a, b) => b.year - a.year).map((s) => `
-    <button role="tab" class="w-${s.winner}" data-year="${s.year}" aria-selected="${state.year === s.year}">
+    <button role="tab" class="w-${s.winner || "upcoming"}" data-year="${s.year}" aria-selected="${state.year === s.year}">
       <span class="y">${s.year}</span>
-      <span class="r"><i class="dot ${s.winner}"></i>${s.winner === "stanford" ? "Stanford" : "Cal"} ${Math.max(s.stanford, s.cal)}–${Math.min(s.stanford, s.cal)}</span>
+      <span class="r"><i class="dot ${resultDot(s)}"></i>${result(s)}</span>
     </button>`).join("") + `
     <button role="tab" class="compare" data-year="compare" aria-selected="${state.year === "compare"}">
-      <span class="y">All years</span><span class="r">Compare 2020–2025</span>
+      <span class="y">All years</span><span class="r">Compare ${state.index.seasons[0].year}–${state.index.seasons.at(-1).year}</span>
     </button>
     <button class="odds-tab" id="go-odds" aria-expanded="${open}" aria-controls="markets" title="Show the Polymarket betting odds">
       <span class="y">2026 odds</span><span class="r">📈 ${open ? "Hide" : "Polymarket"}</span>
@@ -106,15 +110,15 @@ function renderSeason() {
   const ko = new Date(g.kickoff_utc);
   const koStr = ko.toLocaleString("en-US", { timeZone: "America/Los_Angeles", weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
   const team = (k, cls) => `
-    <div class="team ${cls} ${g.winner === k ? "win" : "lose"}">
-      ${cls === "cal" ? `<div class="score">${g.teams[k].score}</div>` : ""}
+    <div class="team ${cls} ${!g.winner ? "" : g.winner === k ? "win" : "lose"}">
+      ${cls === "cal" ? `<div class="score">${g.winner ? g.teams[k].score : "–"}</div>` : ""}
       <div><div class="name">${k === "stanford" ? "Stanford" : "Cal"}</div>
         <div style="color:var(--ink-3);font-size:12px">${esc(g.teams[k].name)}${g.home === k ? " · home" : ""}</div>
-        ${d.football?.coaches?.[k] ? `<div style="color:var(--ink-2);font-size:12px;margin-top:2px">HC ${esc(d.football.coaches[k].name)}${d.football.teams?.[k]?.record_after_game ? ` · ${esc(d.football.teams[k].record_after_game)} after the game` : ""}</div>` : ""}</div>
-      ${cls === "stanford" ? `<div class="score">${g.teams[k].score}</div>` : ""}
+        ${d.football?.coaches?.[k] ? `<div style="color:var(--ink-2);font-size:12px;margin-top:2px">HC ${esc(d.football.coaches[k].name)}${d.football.teams?.[k]?.record_after_game ? ` · ${esc(d.football.teams[k].record_after_game)} ${g.winner ? "after the game" : "going in"}` : ""}</div>` : ""}</div>
+      ${cls === "stanford" ? `<div class="score">${g.winner ? g.teams[k].score : "–"}</div>` : ""}
     </div>`;
   $("#scoreboard").innerHTML = `${team("stanford", "stanford")}
-    <div class="meta"><span class="axe">${emojiAxe}</span><b>${d.year} Big Game</b><br>${esc(g.venue)}<br>${koStr} PT
+    <div class="meta"><span class="axe">${emojiAxe}</span><b>${d.year} Big Game${g.winner ? "" : " · upcoming"}</b><br>${esc(g.venue)}<br>${g.winner ? "" : "Kickoff "}${koStr} PT
       ${state.markets?.big_game?.[d.year]?.pregame_stanford != null ? `<div class="note">Polymarket at kickoff: Stanford ${Math.round(100 * state.markets.big_game[d.year].pregame_stanford)}% · Cal ${100 - Math.round(100 * state.markets.big_game[d.year].pregame_stanford)}%</div>` : ""}
       ${g.note ? `<div class="note">${esc(g.note)}</div>` : ""}</div>
     ${team("cal", "cal")}`;
@@ -126,7 +130,7 @@ function renderSeason() {
     { l: "Views", v: fmt(s.views), n: `${fmt(s.likes)} likes · ${fmt(s.shares)} shares` },
     { l: "Comments", v: fmt(s.comments_collected), n: `${fmt(s.comments_counted)} counted by TikTok` },
     { l: "Items labeled", v: fmt(s.items_labeled), n: "comments + videos, 3 models" },
-    { l: "Momentum, KO to +48h", v: sgn(gw.momentum), n: gw.momentum == null ? (labeled ? "too few posts from one side" : "needs labels") : gw.momentum > 0 ? "Stanford fans happier" : "Cal fans happier" },
+    { l: "Momentum, KO to +48h", v: sgn(gw.momentum), n: gw.momentum == null ? (!g.winner ? "starts at kickoff" : labeled ? "too few posts from one side" : "needs labels") : gw.momentum > 0 ? "Stanford fans happier" : "Cal fans happier" },
     { l: "Fan split", v: s.overall_n ? `${Math.round(100 * s.overall_n_stanford / s.overall_n)}/${Math.round(100 * s.overall_n_cal / s.overall_n)}` : "–", n: "% Stanford / % Cal leaning" },
   ];
   $("#tiles").innerHTML = tiles.map((t) => `<div class="tile"><div class="l">${t.l}</div><div class="v">${t.v}</div><div class="n">${t.n}</div></div>`).join("");
@@ -356,7 +360,7 @@ function renderFootball() {
   $("#coaches").innerHTML = ["stanford", "cal"].map((k) => { const c = f.coaches[k] || {}, t = f.teams[k] || {};
     return `<div class="coach ${k}"><div class="ten">${k === "stanford" ? "Stanford" : "Cal"} head coach</div><div class="who">${esc(c.name || "–")}</div>
       <div class="ten">${esc(c.tenure || "")}</div><div class="nt">${esc(c.note || "")}</div>
-      <div class="rec">Record after the Big Game: <b>${esc(t.record_after_game || "–")}</b></div></div>`; }).join("");
+      <div class="rec">Record ${state.data.game.winner ? "after" : "going into"} the Big Game: <b>${esc(t.record_after_game || "–")}</b></div></div>`; }).join("");
 
   const ts = { st: f.teams.stanford?.team_stats || {}, ca: f.teams.cal?.team_stats || {} };
   const keys = TUG_STATS.filter((k) => ts.st[k] != null && ts.ca[k] != null);
@@ -445,7 +449,7 @@ $("#play").onclick = () => {
 /* ---------------- compare view ---------------- */
 function renderCompare() {
   const c = C(), seasons = state.compare.seasons;
-  $("#multiples").innerHTML = seasons.map((s) => `<div class="mini"><div class="t"><b>${s.year}</b><span><i class="dot ${s.winner}"></i> ${s.winner === "stanford" ? "Stanford" : "Cal"} won</span></div><div class="chart" id="m-${s.year}"></div></div>`).join("");
+  $("#multiples").innerHTML = seasons.map((s) => `<div class="mini"><div class="t"><b>${s.year}</b><span><i class="dot ${resultDot(s)}"></i> ${s.winner ? (s.winner === "stanford" ? "Stanford" : "Cal") + " won" : "upcoming"}</span></div><div class="chart" id="m-${s.year}"></div></div>`).join("");
   seasons.forEach((s) => {
     const tl = s.timeline_game || [];
     if (!tl.some((r) => r.momentum != null)) return emptyChart(`m-${s.year}`, (s.summary?.items_labeled ? "Too few in-game posts from both sides" : "Not labeled yet"));
@@ -466,7 +470,7 @@ function renderCompare() {
   else chart("c-yoy").setOption({
     grid: { left: 40, right: 16, top: 16, bottom: 28 },
     tooltip: tooltip(c, { axisPointer: { type: "shadow" }, valueFormatter: (v) => sgn(v) }),
-    xAxis: { type: "category", data: seasons.map((s) => `${s.year} (${s.winner === "stanford" ? "STAN" : "CAL"} W)`), ...baseAxis(c), splitLine: { show: false } },
+    xAxis: { type: "category", data: seasons.map((s) => `${s.year} (${s.winner ? (s.winner === "stanford" ? "STAN" : "CAL") + " W" : "next"})`), ...baseAxis(c), splitLine: { show: false } },
     yAxis: { type: "value", ...baseAxis(c) },
     series: [{ type: "bar", name: "In-game momentum", barWidth: 18, data: igm.map((v) => ({ value: v, itemStyle: { color: v > 0 ? c.st : c.ca, borderRadius: v > 0 ? [4, 4, 0, 0] : [0, 0, 4, 4] } })),
       label: { show: true, position: "top", color: c.ink2, fontSize: 11, formatter: (o) => o.value == null ? "" : sgn(o.value) },
@@ -485,7 +489,7 @@ function renderCompare() {
   const idx = state.index.seasons;
   $("#t-seasons").innerHTML = `<tr><th>Season</th><th>Result</th><th>Venue</th><th class="num">On-topic videos</th><th class="num">Views</th><th class="num">Comments</th><th class="num">Labeled</th><th class="num">Overall mood</th><th class="num">Momentum KO→+4h</th><th class="num">Momentum KO→+48h</th></tr>` +
     seasons.map((s, i) => { const x = idx[i], sm = s.summary || {}; return `<tr><td><b>${s.year}</b></td>
-      <td><i class="dot ${x.winner}"></i> ${x.winner === "stanford" ? "Stanford" : "Cal"} ${Math.max(x.stanford, x.cal)}–${Math.min(x.stanford, x.cal)}</td><td>${esc(x.venue)}</td>
+      <td><i class="dot ${resultDot(x)}"></i> ${result(x)}</td><td>${esc(x.venue)}</td>
       <td class="num">${fmt(sm.videos_on_topic)}</td><td class="num">${fmt(sm.views)}</td><td class="num">${fmt(sm.comments_collected)}</td><td class="num">${fmt(sm.items_labeled)}</td>
       <td class="num">${sgn(sm.overall_sentiment)}</td><td class="num">${sgn(sm.in_game?.momentum)}</td><td class="num">${sgn(sm.game_window?.momentum)}</td></tr>`; }).join("");
 }
@@ -521,7 +525,8 @@ function renderMarkets() {
     $("#pm-next-title").textContent = `${ng.year || 2026} Big Game · ${next.title}`;
     const ko = ng.kickoff_utc ? new Date(ng.kickoff_utc) : null;
     $("#pm-next-sub").textContent = ko ? `${ko.toLocaleString("en-US", { timeZone: "America/Los_Angeles", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} PT · ${ng.venue || ""}` : "";
-    const days = ko ? Math.ceil((ko - Date.now()) / 864e5) : null;
+    const ptDay = (t) => { const d = new Date(new Date(t).toLocaleString("en-US", { timeZone: "America/Los_Angeles" })); d.setHours(0, 0, 0, 0); return d; };
+    const days = ko ? Math.round((ptDay(ko) - ptDay(Date.now())) / 864e5) : null;  // calendar days, Pacific time
     $("#pm-countdown").textContent = days == null ? "" : days > 1 ? `${days} days to kickoff` : days === 1 ? "Tomorrow" : days === 0 ? "Game day" : "Final";
     $("#pm-odds").innerHTML = `<div class="teams"><div><div class="who">Stanford</div><div class="pct st">${pct(next.stanford_prob)}</div></div>
       <div style="text-align:right"><div class="who">Cal</div><div class="pct ca">${pct(next.cal_prob)}</div></div></div>
@@ -587,16 +592,18 @@ function renderHero() {
   const judged = ss.filter((s) => s.momentum_48h != null);
   const match = judged.filter((s) => (s.momentum_48h > 0) === (s.winner === "stanford")).length;
   const stats = [
-    { l: "Big Games", v: ss.length, f: String },
+    { l: "Big Games", v: ss.filter((s) => s.winner).length, f: String },
     { l: "On-topic videos", v: sum("videos_on_topic") },
     { l: "Comments read", v: sum("comments_collected") },
     { l: "Mood picked the winner", v: match, f: (n) => `${n}/${judged.length}` },
   ];
   $("#hero-stats").innerHTML = stats.map((s, i) => `<div class="hs"><div class="v" id="hs-${i}">0</div><div class="l">${s.l}</div></div>`).join("");
   stats.forEach((s, i) => countUp(document.getElementById(`hs-${i}`), s.v, s.f || fmt));
-  const items = ss.map((s) => `<span>${s.year} · <b class="${s.winner === "stanford" ? "st" : "ca"}">${s.winner === "stanford" ? "Stanford" : "Cal"}</b> ${Math.max(s.stanford, s.cal)}–${Math.min(s.stanford, s.cal)} · ${esc(s.venue)}${s.momentum_48h != null ? ` · fan mood ${sgn(s.momentum_48h)}` : ""}</span>`).join("<span>🪓</span>");
+  const items = ss.map((s) => s.winner
+    ? `<span>${s.year} · <b class="${s.winner === "stanford" ? "st" : "ca"}">${s.winner === "stanford" ? "Stanford" : "Cal"}</b> ${Math.max(s.stanford, s.cal)}–${Math.min(s.stanford, s.cal)} · ${esc(s.venue)}${s.momentum_48h != null ? ` · fan mood ${sgn(s.momentum_48h)}` : ""}</span>`
+    : `<span>${s.year} · <b>next up</b> · ${koShort(s.kickoff_utc)} · ${esc(s.venue)}</span>`).join("<span>🪓</span>");
   $("#ticker").innerHTML = items + "<span>🪓</span>" + items + "<span>🪓</span>";
-  const latest = ss[ss.length - 1].year;
+  const latest = [...ss].reverse().find((s) => s.winner)?.year ?? ss[ss.length - 1].year;  // latest finished game
   $("#cta-replay").textContent = `▶ Replay ${latest}`;
   $("#cta-replay").onclick = async () => { await select(latest); $("#dash").scrollIntoView({ behavior: "smooth" }); setTimeout(() => !state.timer && $("#play").click(), 700); };
   $("#cta-compare").onclick = async () => { await select("compare"); $("#dash").scrollIntoView({ behavior: "smooth" }); };
@@ -629,6 +636,7 @@ $("#rebuild").onclick = async () => {
   const years = state.index.seasons.map((s) => s.year);
   const hash = location.hash.slice(1);  // deep links: #2023, #compare, #odds
   if (hash === "compare" || years.includes(+hash)) saved = hash;
-  await select(saved === "compare" ? "compare" : years.includes(+saved) ? +saved : years[years.length - 1]);
+  const played = state.index.seasons.filter((s) => s.winner).map((s) => s.year);
+  await select(saved === "compare" ? "compare" : years.includes(+saved) ? +saved : played[played.length - 1] ?? years[years.length - 1]);
   if (hash === "odds") showOdds(true);
 })();

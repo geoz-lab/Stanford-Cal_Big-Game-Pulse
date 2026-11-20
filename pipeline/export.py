@@ -94,7 +94,7 @@ def _inline_script(js: str) -> str:
     return "<script>" + js.replace("</script", "<\\/script") + "</script>"
 
 
-def export(public: bool = False) -> str:
+def export(public: bool = False, home: str | None = None) -> str:
     html = (FRONTEND / "index.html").read_text()
     css = (FRONTEND / "styles.css").read_text()
     html = re.sub(r'<link rel="stylesheet" href="styles\.css[^"]*">', lambda _: f"<style>\n{css}\n</style>", html)
@@ -107,6 +107,9 @@ def export(public: bool = False) -> str:
         html = html.replace(f"assets/{name}", _data_uri(FRONTEND / "assets" / name))
     if public:
         html = html.replace("<title>Big Game Pulse</title>", "<title>Big Game Pulse (public version)</title>")
+    if home:  # back link to a home page, e.g. when the dashboard lives on a personal site
+        link = f'<a class="btn home-link" href="{home}" title="Back to the home page">← Home</a>'
+        html = html.replace('<img class="mark" src=', link + '\n    <img class="mark" src=', 1)
 
     kind = "public" if public else "full"
     stem = f"BigGamePulse_{kind}_{datetime.now().strftime('%Y-%m-%d')}"
