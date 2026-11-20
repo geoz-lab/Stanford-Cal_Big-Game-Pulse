@@ -33,13 +33,31 @@ def _read(name: str) -> dict:
     return json.loads((DASH / f"{name}.json").read_text())
 
 
+MIN_N = 3  # smallest group an average or a count-based detail is published for
+
+
 def _strip_user_content(season: dict) -> dict:
+    """Public version: no user content, and nothing that narrows down to fewer than MIN_N posts."""
     s = dict(season)
     for k in USER_CONTENT_LISTS:
         s[k] = []
+    s["hashtags"] = []  # not shown; a hashtag used on one video points to that video
     fb = dict(s.get("football") or {})
-    fb["buzz"] = [{k: v for k, v in b.items() if k != "top_text"} for b in fb.get("buzz") or []]
+    fb["buzz"] = [{**{k: v for k, v in b.items() if k not in ("top_text", "top_likes")},
+                   "sentiment": b.get("sentiment") if (b.get("mentions") or 0) >= MIN_N else None}
+                  for b in fb.get("buzz") or []]
     s["football"] = fb
+    for tl in ("timeline_game", "timeline_daily"):
+        rows = []
+        for r in s.get(tl) or []:
+            r = dict(r)
+            for side in ("stanford", "cal"):
+                if (r.get(f"n_{side}") or 0) < MIN_N:
+                    r[f"mood_{side}"] = None
+            if (r.get("n") or 0) < MIN_N:
+                r["sentiment"] = None
+            rows.append(r)
+        s[tl] = rows
     return s
 
 
